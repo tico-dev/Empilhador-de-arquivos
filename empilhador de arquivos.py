@@ -2,14 +2,19 @@ import os
 import openpyxl
 
 files = []
+juntar = []
 
-empilhado = open('empilhado.txt', 'a+', errors='ignore')
-for path, diretorio, arquivos in os.walk('C:/Users/gustavo.gomes/Desktop/empilhador'):
+cabecalho = "userid;nome;cpf;endereco"  # Defina um cabeçalho
+diretorio = os.getcwd()
+
+empilhado = open('empilhado.txt', 'a+', encoding='latin-1', errors='ignore')
+for _, _, arquivos in os.walk(diretorio):
     for file in arquivos:
+        file = file.lower()
         if ('.txt' in file or '.csv' in file) and 'empilhado' not in file:
             files.append(file)
 
-        elif '.xlsx' in file:
+        if '.xlsx' in file:
             file = file.replace('.xlsx', '')
 
             filename = f'{file}.xlsx'
@@ -24,7 +29,7 @@ for path, diretorio, arquivos in os.walk('C:/Users/gustavo.gomes/Desktop/empilha
             data = sheet.rows
 
             # Cria o arquivo CSV
-            csv = open(f"{file}.csv", "w+", errors='ignore')
+            csv = open(f"{file}.csv", "w+", encoding='latin-1', errors='ignore')
 
             for row in data:
                 l = list(row)
@@ -34,17 +39,25 @@ for path, diretorio, arquivos in os.walk('C:/Users/gustavo.gomes/Desktop/empilha
                     else:
                         csv.write(str(l[i].value) + ';')
                 csv.write('\n')
-
-            csv.close()
             files.append(f'{file}.csv')
+            csv.close()
 
-
-
-
+empilhado.write(cabecalho.replace(';', '|'))
 for file in files:
-    with open('C:/Users/gustavo.gomes/Desktop/empilhador/' + file, 'r', encoding='latin-1', errors='ignore') as arquivo:
+    with open(os.path.dirname(os.path.realpath(__file__)).replace("\\", '/') + '/' + file, 'r', encoding='latin-1', errors='ignore') as arquivo:
         lines = arquivo.readlines()
+        empilhado.write('\n')
         for line in lines:
-            empilhado.write(line)
+            if cabecalho not in line.lower():
+                empilhado.write(line.replace(' ', '').replace(';', '|'))
 
-print('arquivos lidos:', files)
+
+print('arquivos empilhados:', files)
+
+for _, _, arquivos in os.walk(diretorio):
+    print('Procurando arquivos gerados pelo programa...')
+    for arquivo in arquivos:
+        if '.xlsx' in arquivo:
+            arquivo = arquivo.replace('xlsx', 'csv')
+            print('Removido arquivo CSV gerado pelo programa:', arquivo)
+            os.remove(arquivo)
