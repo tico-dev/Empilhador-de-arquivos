@@ -1,20 +1,26 @@
+# coding=utf-8
 import os
 import openpyxl
+from datetime import datetime
 
+print(f'Início junção: {datetime.now()}')
+empilhados = []
 files = []
-juntar = []
+# diretorio = 'C:/Users/Guto/Desktop/empilhador_folder'
+diretorio = os.path.dirname(os.path.realpath(__file__))
 
-cabecalho = "userid;nome;cpf;endereco"  # Defina um cabeçalho
-diretorio = os.getcwd()
+empilhado = open('ARQUIVOS CONCATENADOS.txt', 'a+', encoding="utf-8", errors='ignore')
 
-empilhado = open('empilhado.txt', 'a+', encoding='latin-1', errors='ignore')
+
 for _, _, arquivos in os.walk(diretorio):
     for file in arquivos:
-        file = file.lower()
-        if ('.txt' in file or '.csv' in file) and 'empilhado' not in file:
+        if ('.txt' in file.lower() or '.csv' in file.lower()) and 'ARQUIVOS CONCATENADOS' not in file.upper():
             files.append(file)
+            empilhados.append(file)
 
         if '.xlsx' in file:
+            global index
+            print('ACHOU ARQUIVO EXCEL')
             file = file.replace('.xlsx', '')
 
             filename = f'{file}.xlsx'
@@ -28,36 +34,35 @@ for _, _, arquivos in os.walk(diretorio):
             # Pega o conteudo da planilha
             data = sheet.rows
 
-            # Cria o arquivo CSV
-            csv = open(f"{file}.csv", "w+", encoding='latin-1', errors='ignore')
-
-            for row in data:
+            for index, row in enumerate(data):
+                if index == 0:
+                    continue
                 l = list(row)
                 for i in range(len(l)):
                     if i == len(l) - 1:
-                        csv.write(str(l[i].value))
+                        empilhado.write(str(l[i].value))
                     else:
-                        csv.write(str(l[i].value) + ';')
-                csv.write('\n')
-            files.append(f'{file}.csv')
-            csv.close()
+                        empilhado.write(str(l[i].value) + '|')
+                empilhado.write('\n')
+            empilhados.append(file)
 
-empilhado.write(cabecalho.replace(';', '|'))
 for file in files:
-    with open(os.path.dirname(os.path.realpath(__file__)).replace("\\", '/') + '/' + file, 'r', encoding='latin-1', errors='ignore') as arquivo:
-        lines = arquivo.readlines()
-        empilhado.write('\n')
-        for line in lines:
-            if cabecalho not in line.lower():
-                empilhado.write(line.replace(' ', '').replace(';', '|'))
+    with open(os.path.dirname(os.path.realpath(__file__)).replace("\\", '/') + '/' + file, 'r', encoding="utf-8", errors='ignore') as arquivo:
+        lines = arquivo.readlines()[1:]
+        tamanho = len(lines)
+        print(f'Linhas em {file}: {tamanho}')
+        empilhado.write(''.join(lines).replace(';', '|'))
 
 
-print('arquivos empilhados:', files)
+print('arquivos empilhados:', empilhados)
+print(f'final junção: {datetime.now()}')
 
-for _, _, arquivos in os.walk(diretorio):
-    print('Procurando arquivos gerados pelo programa...')
-    for arquivo in arquivos:
-        if '.xlsx' in arquivo:
-            arquivo = arquivo.replace('xlsx', 'csv')
-            print('Removido arquivo CSV gerado pelo programa:', arquivo)
-            os.remove(arquivo)
+empilhado.close()
+
+print('Contando linhas no arquivo gerado:')
+novo_arquivo = open('ARQUIVOS CONCATENADOS.txt', 'r', encoding="utf-8", errors='ignore')
+novo_arquivo_linhas = novo_arquivo.readlines()
+novo_arquivo_tamanho = len(novo_arquivo_linhas)
+
+
+print(f'Linhas em ARQUIVOS CONCATENADOS.txt: {novo_arquivo_tamanho}')
